@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 100" role="img" aria-label="LUMIERE">
+  <rect width="520" height="100" fill="none"/>
+  <text
+    x="18"
+    y="66"
+    fill="#171311"
+    font-family="Baskerville, 'Iowan Old Style', 'Times New Roman', Georgia, serif"
+    font-size="56"
+    letter-spacing="7"
+  >
+    LUMIERE
+  </text>
+  <path
+    d="M292 18 C289.5 21.3 286.8 24.9 286.8 29.2 C286.8 34.5 290.6 38.4 295 39.6 C299.4 38.4 303.2 34.5 303.2 29.2 C303.2 24.9 300.5 21.3 298 18 C297.3 17.1 296.2 16 295 15 C293.8 16 292.7 17.1 292 18 Z"
+    fill="#c8a17b"
+  />
+  <line x1="295" y1="40" x2="295" y2="56" stroke="#171311" stroke-width="1.7" stroke-linecap="round"/>
+</svg>

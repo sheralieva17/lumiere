@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  customer
+  manager
+  admin
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  shipped
+  delivered
+  cancelled
+}
+
+enum PaymentMethod {
+  mock_card
+  cash_on_delivery
+  bank_transfer
+}
+
+enum PaymentStatus {
+  paid
+  pending
+}
+
+enum OrderManagerStatus {
+  pending_review
+  confirmed
+  needs_clarification
+  sent_to_fulfillment
+}
+
+enum CancellationStatus {
+  none
+  requested
+  approved
+  rejected
+}
+
+enum ReviewModerationStatus {
+  pending
+  approved
+  rejected
+  escalated
+}
+
+model User {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  phone     String?
+  avatarUrl String?
+  role      UserRole @default(customer)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders      Order[]
+  reviews     Review[]
+  favorites   Favorite[]
+  addresses   Address[]
+  quizResult  QuizResult?
+  cart        Cart?
+  dailyReports ManagerDailyReport[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  categoryId  String
+  brandId     String
+  name        String
+  description String
+  image       String
+  gallery     String[] @default([])
+  price       Float
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand      Brand       @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  orderItems OrderItem[]
+  reviews    Review[]
+  favorites  Favorite[]
+  cartItems  CartItem[]
+}
+
+model Order {
+  id               String             @id @default(cuid())
+  userId           String
+  addressId        String?
+  shippingAddress  String
+  subtotal         Float
+  shipping         Float
+  tax              Float
+  totalAmount      Float
+  status           OrderStatus        @default(pending)
+  paymentMethod    PaymentMethod
+  paymentStatus    PaymentStatus      @default(pending)
+  managerStatus    OrderManagerStatus @default(pending_review)
+  managerNote      String             @default("")
+  managerUpdatedAt DateTime?
+  cancellationStatus      CancellationStatus @default(none)
+  cancellationReason      String             @default("")
+  cancellationRequestedAt DateTime?
+  cancellationResolvedAt  DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  items   OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id                String                 @id @default(cuid())
+  userId            String
+  productId         String
+  rating            Int
+  comment           String
+  moderationStatus  ReviewModerationStatus @default(pending)
+  managerReply      String                 @default("")
+  escalatedToAdmin  Boolean                @default(false)
+  managerUpdatedAt  DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  image     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId       String
+  label        String?
+  recipient    String?
+  city         String
+  region       String?
+  street       String
+  house        String?
+  apartment    String?
+  postalCode   String?
+  phone        String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders       Order[]
+}
+
+model QuizResult {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  skinType            String
+  concerns            String[]
+  sensitivityLevel    String
+  allergies           String[]
+  texturePreference   String
+  fragrancePreference String
+  ageRange            String
+  budget              String
+  routine             String
+  recommendations     String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+}
+
+model ManagerDailyReport {
+  id                  String   @id @default(cuid())
+  reportDate          DateTime @unique
+  deliveredOrdersCount Int
+  cancelledOrdersCount Int     @default(0)
+  deliveredRevenue    Float
+  comment             String   @default("")
+  managerId           String
+  managerName         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  manager             User     @relation(fields: [managerId], references: [id], onDelete: Cascade)
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
